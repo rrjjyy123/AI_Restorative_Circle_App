@@ -111,7 +111,8 @@ app.post('/generate-questions', async (req, res) => {
 ---
 
 `;
-        const text = await response.text();
+        const result = await model.generateContent(prompt);
+        const text = await result.text();
         const combinedText = fixedCircleRules + '\n\n' + text; // Add two newlines for separation
         
         res.json({ questions: combinedText });
@@ -145,9 +146,7 @@ app.get('/recommend-topics', async (req, res) => {
         `;
 
         const result = await model.generateContent(prompt);
-        const response = await result.response;
-        const text = await response.text();
-        
+        const text = await result.text();
         res.json({ topics: text });
 
     } catch (error) {
