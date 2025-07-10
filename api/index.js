@@ -29,7 +29,7 @@ app.post('/generate-questions', async (req, res) => {
     try {
         const { topic } = req.body;
 
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
         const learningDataSummary = `
         You are an expert assistant for elementary school teachers in Korea, specializing in Restorative Justice and Circle Practices.
@@ -125,7 +125,7 @@ app.post('/generate-questions', async (req, res) => {
 // New API endpoint for recommending topics
 app.get('/recommend-topics', async (req, res) => {
     try {
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
         const learningDataSummary = `
         You are an expert assistant for elementary school teachers in Korea, specializing in Restorative Justice and Circle Practices.
