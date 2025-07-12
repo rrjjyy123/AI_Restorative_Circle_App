@@ -27,10 +27,13 @@ module.exports = async (req, res) => {
         const response = await result.response;
         const text = response.text();
 
+        // 마크다운 코드 블록 제거
+        const cleanedText = text.replace(/```json\n|```/g, '').trim();
+
         // JSON 파싱 시도
         let parsedResponse;
         try {
-            parsedResponse = JSON.parse(text);
+            parsedResponse = JSON.parse(cleanedText);
         } catch (parseError) {
             console.error('Failed to parse AI response as JSON:', text, parseError);
             return res.status(500).json({ message: 'AI model returned malformed JSON.', rawResponse: text });
