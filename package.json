@@ -1,0 +1,30 @@
+{
+  "name": "ai-restorative-circle-helper",
+  "version": "2.0.0",
+  "description": "AI 기반 회복적 서클 질문 세트 생성 기능이 추가된 웹 애플리케이션",
+  "main": "index.html",
+  "scripts": {
+    "dev": "npx serve .",
+    "build": "echo 'Static site - no build required'",
+    "start": "npx serve ."
+  },
+  "keywords": [
+    "education",
+    "ai",
+    "question-cards",
+    "restorative-justice",
+    "classroom-management"
+  ],
+  "author": "관계중심 생활교육 전문가",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/ai-restorative-circle-helper.git"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "serve": "^14.2.0"
+  }
+} 

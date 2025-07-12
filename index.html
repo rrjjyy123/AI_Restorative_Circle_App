@@ -1,0 +1,1422 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 회복적 서클 질문 도우미</title>
+    <link rel="stylesheet" href="css/ai-components.css">
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* 헤더 */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        /* 네비게이션 */
+        .nav {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        .nav-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .nav-tab {
+            padding: 12px 20px;
+            background: #f8f9fa;
+            border: 2px solid transparent;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .nav-tab:hover {
+            background: #e9ecef;
+            transform: translateY(-2px);
+        }
+
+        .nav-tab.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        /* 카드 그리드 */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        /* 카테고리별 색상 */
+        :root {
+            --color-self: #e15b5b;
+            --color-others: #2bb3a3;
+            --color-community: #f7a531;
+            --color-opening: #b36ae2;
+            --color-closing: #4a90e2;
+        }
+
+        .card, .selected-card, .slideshow-card {
+            border-radius: 20px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            background: white;
+            border: 4px solid var(--color-self);
+            position: relative;
+            padding: 0;
+            overflow: hidden;
+            transition: box-shadow 0.3s, border-color 0.3s, transform 0.3s;
+        }
+        .card[data-category='자신과의 관계'], .selected-card[data-category='자신과의 관계'], .slideshow-card[data-category='자신과의 관계'] { border-color: var(--color-self); }
+        .card[data-category='타인과의 관계'], .selected-card[data-category='타인과의 관계'], .slideshow-card[data-category='타인과의 관계'] { border-color: var(--color-others); }
+        .card[data-category='공동체와의 관계'], .selected-card[data-category='공동체와의 관계'], .slideshow-card[data-category='공동체와의 관계'] { border-color: var(--color-community); }
+        .card[data-category*='여는'], .selected-card[data-category*='여는'], .slideshow-card[data-category*='여는'] { border-color: var(--color-opening); }
+        .card[data-category*='닫는'], .selected-card[data-category*='닫는'], .slideshow-card[data-category*='닫는'] { border-color: var(--color-closing); }
+
+        .card:hover {
+            transform: translateY(-8px) scale(1.03);
+            box-shadow: 0 16px 40px rgba(0,0,0,0.18);
+        }
+
+        /* 카드 상단 라벨 */
+        .card-label {
+            width: 100%;
+            padding: 10px 0 6px 0;
+            text-align: center;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: white;
+            letter-spacing: 1px;
+        }
+        .card[data-category='자신과의 관계'] .card-label { background: var(--color-self); }
+        .card[data-category='타인과의 관계'] .card-label { background: var(--color-others); }
+        .card[data-category='공동체와의 관계'] .card-label { background: var(--color-community); }
+        .card[data-category*='여는'] .card-label { background: var(--color-opening); }
+        .card[data-category*='닫는'] .card-label { background: var(--color-closing); }
+
+        /* 카드 본문 */
+        .card-content {
+            font-size: 1.15rem;
+            font-weight: 500;
+            color: #222;
+            text-align: center;
+            padding: 32px 18px 24px 18px;
+            min-height: 80px;
+        }
+
+        /* 카드 하단 키워드 */
+        .card-keyword {
+            width: 100%;
+            padding: 10px 0 8px 0;
+            text-align: center;
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: #fff;
+            letter-spacing: 1px;
+            border-top: 1px solid #eee;
+        }
+        .card[data-category='자신과의 관계'] .card-keyword { background: #f07c7c; }
+        .card[data-category='타인과의 관계'] .card-keyword { background: #3ed6c2; }
+        .card[data-category='공동체와의 관계'] .card-keyword { background: #ffc46b; color: #b36a00; }
+        .card[data-category*='여는'] .card-keyword { background: #c49be2; }
+        .card[data-category*='닫는'] .card-keyword { background: #7bb6f7; }
+
+        /* 선택된 카드 영역 */
+        .selected-cards-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        .selected-cards-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .selected-cards-container {
+            display: flex;
+            gap: 15px;
+            overflow-x: auto;
+            padding: 10px 0;
+            min-height: 120px;
+        }
+
+        .selected-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 250px;
+            position: relative;
+            border: 2px solid #e9ecef;
+            margin: 0 8px;
+            cursor: pointer;
+            border-width: 3px;
+        }
+
+        .selected-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            border-color: #667eea;
+        }
+
+        .selected-card .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 2;
+        }
+
+        .selected-card .close-btn:hover {
+            background: #c82333;
+            transform: scale(1.1);
+        }
+
+        .selected-card-content {
+            font-size: 1rem;
+            line-height: 1.5;
+            color: #333;
+            margin-top: 10px;
+        }
+
+        /* 빈카드 작성 */
+        .empty-card-form {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+
+        /* 슬라이드쇼 */
+        .slideshow {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .slideshow.active {
+            display: flex;
+        }
+
+        .slideshow-content {
+            width: 100vw;
+            height: 100vh;
+            max-width: none;
+            max-height: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+            overflow: auto;
+            background: transparent;
+            padding: 0;
+            margin: 0;
+        }
+
+        .slideshow-question {
+            font-size: 2rem;
+            line-height: 1.4;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .slideshow-category {
+            font-size: 1.1rem;
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .slideshow-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 30px;
+        }
+
+        .slideshow-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+        }
+
+        .slideshow-btn:hover {
+            background: #5a6fd8;
+            transform: scale(1.1);
+        }
+
+        .slideshow-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .slideshow-counter {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .slideshow-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+        /* 사용 방법 */
+        .usage-guide {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        .usage-guide h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .usage-guide ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .usage-guide li {
+            padding: 10px 0;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .usage-guide li:last-child {
+            border-bottom: none;
+        }
+
+        .usage-guide .step {
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        /* 서클 가이드 스타일 */
+        .circle-definition {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .circle-definition p {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+        }
+
+        .circle-elements {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .element-item {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border: 2px solid #e9ecef;
+        }
+
+        .element-item h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+
+        .element-item p {
+            color: #666;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        .circle-tools {
+            margin: 20px 0;
+        }
+
+        .tool-item {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border: 2px solid #e9ecef;
+        }
+
+        .tool-item h4 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .tool-item ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .tool-item li {
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .tool-item li:last-child {
+            border-bottom: none;
+        }
+
+        .circle-rules {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+        }
+
+        .circle-rules li {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            padding: 15px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .circle-rules li:last-child {
+            border-bottom: none;
+        }
+
+        .rule-number {
+            background: #28a745;
+            color: white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        /* 반응형 */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .nav-tabs {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .nav-tab {
+                width: 100%;
+                max-width: 300px;
+                text-align: center;
+            }
+
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .selected-cards-container {
+                flex-direction: column;
+            }
+
+            .selected-card {
+                min-width: auto;
+            }
+
+            .slideshow-question {
+                font-size: 1.5rem;
+            }
+            .slideshow-card {
+                width: 98vw;
+                height: 60vh;
+                max-width: 98vw;
+                max-height: 70vh;
+                font-size: 1.5rem;
+                padding: 3vw;
+            }
+        }
+
+        /* 애니메이션 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card, .selected-card {
+            animation: fadeIn 0.5s ease;
+        }
+
+        /* 빈 상태 메시지 */
+        .empty-message {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-style: italic;
+        }
+        .slideshow-card {
+            width: 100vw;
+            height: 100vh;
+            max-width: none;
+            max-height: none;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 4vw;
+            padding: 4vw;
+            box-sizing: border-box;
+            overflow: auto;
+        }
+        @media (max-width: 768px) {
+            .slideshow-card {
+                width: 98vw;
+                height: 60vh;
+                max-width: 98vw;
+                max-height: 70vh;
+                font-size: 2.2vw;
+                padding: 3vw;
+            }
+        }
+        .slideshow-card .card-content {
+            font-size: 2vw; /* 글자 크기 줄임 */
+            text-align: center;
+        }
+    </style>
+    
+    <!-- AI 관련 스크립트를 모듈로 로드 -->
+    <script type="module" src="js/ai-service.js"></script>
+    <script type="module" src="js/ui-components.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- 헤더 -->
+        <div class="header">
+            <h1>AI 회복적 서클 질문 도우미</h1>
+            <p>관계중심 생활교육 질문카드</p>
+        </div>
+
+        <!-- 네비게이션 -->
+        <div class="nav">
+            <div class="nav-tabs">
+                <div class="nav-tab active" data-category="opening">서클 여는 질문</div>
+                <div class="nav-tab" data-category="self">자신과의 관계</div>
+                <div class="nav-tab" data-category="others">타인과의 관계</div>
+                <div class="nav-tab" data-category="community">공동체와의 관계</div>
+                <div class="nav-tab" data-category="closing">서클 닫는 질문</div>
+                <div class="nav-tab" data-category="empty">빈카드 작성</div>
+                <div class="nav-tab" data-category="play">공동체 놀이</div>
+                <div class="nav-tab" data-category="usage">사용 방법</div>
+            </div>
+        </div>
+
+        <!-- 카드 그리드 -->
+        <div id="cardsGrid" class="cards-grid"></div>
+
+        <!-- 빈카드 작성 폼 -->
+        <div id="emptyCardForm" class="empty-card-form" style="display: none;">
+            <h3>새로운 질문카드 작성</h3>
+            <div class="form-group">
+                <label for="newQuestion">질문 내용</label>
+                <textarea id="newQuestion" rows="3" placeholder="새로운 질문을 입력해주세요..."></textarea>
+            </div>
+            <button class="btn btn-primary" onclick="addEmptyCard()">질문카드 추가</button>
+            
+            <!-- AI 질문 생성 섹션 -->
+            <div id="aiQuestionSection">
+                <h3 style="margin-top:32px;">AI 질문 세트 생성</h3>
+                <div class="form-group">
+                    <label for="aiSituation">학급 상황/주제 선택</label>
+                    <select id="aiSituation">
+                        <option value="학기 초 관계 형성">학기 초 관계 형성</option>
+                        <option value="학기말 성찰">학기말 성찰</option>
+                        <option value="친구와 다툼">친구와 다툼</option>
+                        <option value="스마트폰 사용 문제">스마트폰 사용 문제</option>
+                        <option value="소속감 결핍">소속감 결핍</option>
+                        <option value="새로운 친구 환영">새로운 친구 환영</option>
+                        <option value="집단 따돌림 예방">집단 따돌림 예방</option>
+                        <option value="학급 규칙 만들기">학급 규칙 만들기</option>
+                        <option value="갈등 상황">갈등 상황</option>
+                        <option value="직접 입력">직접 입력</option>
+                    </select>
+                    <input id="aiCustomInput" type="text" placeholder="자유주제 입력" style="display:none;margin-top:8px;" />
+                </div>
+                <button class="btn btn-primary" id="aiGenerateBtn">AI로 질문 세트 만들기</button>
+                <div id="aiLoading" style="display:none;margin:16px 0;">질문 생성 중...</div>
+                <div id="aiResultCards"></div>
+            </div>
+        </div>
+
+        <!-- 사용 방법 -->
+        <div id="usageGuide" class="usage-guide" style="display: none;">
+            <h3>📖 사용 방법</h3>
+            <ul>
+                <li>
+                    <div class="step">1</div>
+                    <div>원하는 카테고리의 질문카드를 클릭하여 하단에 추가합니다.</div>
+                </li>
+                <li>
+                    <div class="step">2</div>
+                    <div>선택된 카드를 드래그하여 순서를 변경할 수 있습니다.</div>
+                </li>
+                <li>
+                    <div class="step">3</div>
+                    <div>선택된 카드를 클릭하면 전체화면 슬라이드쇼로 진행됩니다.</div>
+                </li>
+                <li>
+                    <div class="step">4</div>
+                    <div>슬라이드쇼에서 ←/→ 키로 이동하고 ESC로 종료할 수 있습니다.</div>
+                </li>
+                <li>
+                    <div class="step">5</div>
+                    <div>빈카드 작성으로 새로운 질문을 추가할 수 있습니다.</div>
+                </li>
+            </ul>
+
+            <!-- 추가: 서클 규칙 카드 -->
+            <div class="custom-card clickable-card" id="circleRulesCard" style="margin: 30px 0; border: 2px solid #764ba2; border-radius: 16px; padding: 20px; background: #f6f4ff; cursor: pointer;">
+                <div style="font-weight: bold; color: #764ba2; font-size: 1.2rem; margin-bottom: 10px;">서클 규칙 카드(클릭해서 선택카드에 추가)</div>
+                <div style="background: #764ba2; color: white; border-radius: 10px; padding: 12px 18px; font-size: 1.1rem;">
+                    <div style="font-weight: bold; margin-bottom: 8px;">서클 규칙</div>
+                    <div>① 토킹 스틱을 가진 사람만 이야기하고, 다른 사람의 말을 경청합니다.<br>
+                    ② 서클에서 패스를 정할 수 있으나 모든 질문을 패스할 수는 없습니다.<br>
+                    ③ 서클은 처음부터 끝까지 유지되어야 합니다.<br>
+                    ④ 서클에서 나온 이야기는 비밀이 보장되어야 합니다.</div>
+                </div>
+            </div>
+            <!-- 추가: 이건 꼭 기억해요 카드 -->
+            <div class="custom-card clickable-card" id="circleRememberCard" style="margin: 30px 0; border: 2px solid #4a90e2; border-radius: 16px; padding: 20px; background: #f4faff; cursor: pointer;">
+                <div style="font-weight: bold; color: #4a90e2; font-size: 1.2rem; margin-bottom: 10px;">이건 꼭 기억해요(클릭해서 선택카드에 추가)</div>
+                <div style="display: flex; justify-content: space-around; align-items: flex-start; gap: 20px;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 2rem;">🔵</div>
+                        <div style="font-weight: bold; margin-top: 8px;">원의 의미</div>
+                        <div style="font-size: 0.98rem; color: #333;">우리가 동등하게 하나가 되는 것</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 2rem;">🗣️</div>
+                        <div style="font-weight: bold; margin-top: 8px;">서클</div>
+                        <div style="font-size: 0.98rem; color: #333;">동그랗게 앉아서 이야기를 나누고 소통하는 모임</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 2rem;">🖐️</div>
+                        <div style="font-weight: bold; margin-top: 8px;">토킹스틱</div>
+                        <div style="font-size: 0.98rem; color: #333;">발언의 기회</div>
+                    </div>
+                </div>
+            </div>
+            
+            <h3 style="margin-top: 30px;">🔄 서클이란?</h3>
+            <div class="circle-definition">
+                <p>모든 사람은 타고난 존엄성과 가치를 지닌다는 믿음을 바탕으로 동등한 자격으로 한자리에 원으로 둘러앉아 자신의 생각을 이야기할 수 있는 안전한 공간을 만드는 것</p>
+            </div>
+
+            <h3 style="margin-top: 30px;">👥 서클 구성 요소</h3>
+            <div class="circle-elements">
+                <div class="element-item">
+                    <h4>진행자</h4>
+                    <p>서클에서 참여자들이 동등하게 말할 수 있게 하고 소통을 도우며 서클이 유지되도록 하는 역할</p>
+                </div>
+                <div class="element-item">
+                    <h4>공간</h4>
+                    <p>서클 참여자들의 이야기가 무시되지 않고 다른 이에게 연결되게 하는 배경</p>
+                </div>
+                <div class="element-item">
+                    <h4>도구</h4>
+                    <p>반드시 필요한 요소는 아니나, 서클 참여자들에게 진행 상황을 효과적으로 알리는 역할</p>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 30px;">🪄 서클 도구</h3>
+            <div class="circle-tools">
+                <div class="tool-item">
+                    <h4>토킹스틱 (Talking Stick)</h4>
+                    <ul>
+                        <li>말하는 사람이 잡고 이야기하는 도구로, 토킹스틱을 든 사람이 말할 때는 모두가 경청하도록 함</li>
+                        <li>토킹스틱은 너무 크지 않은 것으로, 이야기가 담긴 작은 물건, 평화와 회복의 상징물, 공동체의 의미를 설명할 수 있는 도구라면 무엇이든지 가능함</li>
+                    </ul>
+                </div>
+                <div class="tool-item">
+                    <h4>센터피스 (Center Piece)</h4>
+                    <ul>
+                        <li>학급에서 의미 있는 물건이나 평화, 공동체, 존중 등의 가치를 지닌 상징물을 서클 중앙에 배치하여 시선 처리와 집중을 유도</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 30px;">📋 서클 규칙</h3>
+            <ul class="circle-rules">
+                <li>
+                    <div class="rule-number">①</div>
+                    <div>토킹 스틱을 가진 사람만 이야기하고, 다른 사람의 말을 경청합니다.</div>
+                </li>
+                <li>
+                    <div class="rule-number">②</div>
+                    <div>서클에서 패스를 정할 수 있으나 모든 질문을 패스할 수는 없습니다.</div>
+                </li>
+                <li>
+                    <div class="rule-number">③</div>
+                    <div>서클은 처음부터 끝까지 유지되어야 합니다.</div>
+                </li>
+                <li>
+                    <div class="rule-number">④</div>
+                    <div>서클에서 나온 이야기는 비밀이 보장되어야 합니다.</div>
+                </li>
+            </ul>
+            
+            <h3 style="margin-top: 30px;">🎯 서클 활동 진행</h3>
+            <ul>
+                <li>
+                    <div class="step">1</div>
+                    <div>원형으로 앉아 차분한 분위기를 조성합니다.</div>
+                </li>
+                <li>
+                    <div class="step">2</div>
+                    <div>서클 여는 질문으로 가볍게 시작합니다.</div>
+                </li>
+                <li>
+                    <div class="step">3</div>
+                    <div>본격적인 질문으로 깊이 있는 대화를 나눕니다.</div>
+                </li>
+                <li>
+                    <div class="step">4</div>
+                    <div>서클 닫는 질문으로 마무리합니다.</div>
+                </li>
+            </ul>
+        </div>
+
+        <!-- 선택된 카드 영역 -->
+        <div class="selected-cards-section">
+            <div class="selected-cards-title">
+                📋 선택된 질문카드
+                <span id="selectedCount">(0개)</span>
+            </div>
+            <div id="selectedCardsContainer" class="selected-cards-container">
+                <div class="empty-message">질문카드를 선택해주세요</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 슬라이드쇼 -->
+    <div id="slideshow" class="slideshow">
+        <div class="slideshow-content">
+            <button class="slideshow-close" onclick="closeSlideshow()">×</button>
+            <div class="slideshow-category" id="slideshowCategory"></div>
+            <div class="slideshow-question" id="slideshowQuestion"></div>
+            <div class="slideshow-nav">
+                <button class="slideshow-btn" onclick="previousSlide()" id="prevBtn">←</button>
+                <div class="slideshow-counter" id="slideCounter"></div>
+                <button class="slideshow-btn" onclick="nextSlide()" id="nextBtn">→</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 질문카드 데이터
+        const questionCards = {
+            opening: [
+                { id: 'opening_1', question: '오늘 나의 기분을 색으로 표현한다면?', category: '서클 여는 질문' },
+                { id: 'opening_2', question: '내가 최근 일주일 동안 먹은 음식 중 가장 맛있었던 것은?', category: '서클 여는 질문' },
+                { id: 'opening_3', question: '내가 오늘 집에 가서 먹고 싶은 음식은?', category: '서클 여는 질문' },
+                { id: 'opening_4', question: '내가 최근에 자주 즐기는 콘텐츠는?', category: '서클 여는 질문' },
+                { id: 'opening_5', question: '오늘 나의 등굣길에서 인상적이었던 풍경은?', category: '서클 여는 질문' },
+                { id: 'opening_6', question: '최근에 가장 즐거웠던 일은?', category: '서클 여는 질문' },
+                { id: 'opening_7', question: '오늘 학교에 올 때 가장 신경 쓴 부분은?', category: '서클 여는 질문' }
+            ],
+            self: [
+                { id: 'self_1', question: '나의 요즘 관심사는 무엇인가요? 관심을 갖게 된 계기는?', category: '자신과의 관계' },
+                { id: 'self_2', question: '나를 속상하게 하는 것은 무엇이고, 속상할 때 어떻게 하나요?', category: '자신과의 관계' },
+                { id: 'self_3', question: '나는 주변 사람들에게 어떤 사람으로 보이고 싶나요?', category: '자신과의 관계' },
+                { id: 'self_4', question: '내가 친구들에게(선생님께) 듣고 싶은 말은?', category: '자신과의 관계' },
+                { id: 'self_5', question: '나는 어떤 것을 할 때 행복한가요?', category: '자신과의 관계' },
+                { id: 'self_6', question: '내가 가장 좋아하는 장소는 어디인가요?', category: '자신과의 관계' },
+                { id: 'self_7', question: '과거에는 무서웠지만 지금은 괜찮아진 것은 무엇이 있나요?', category: '자신과의 관계' },
+                { id: 'self_8', question: '내가 자유롭게 쓸 수 있는 하루가 주어진다면 무엇을 하고 싶나요?', category: '자신과의 관계' },
+                { id: 'self_9', question: '과거에는 싫어했다가 지금은 좋아하게 된 것은 무엇이 있나요?', category: '자신과의 관계' },
+                { id: 'self_10', question: '내가 생각하는 나의 장점은 무엇인가요?', category: '자신과의 관계' },
+                { id: 'self_11', question: '아주 사소한 것들 중, 내가 잘하는 것은 무엇인가요?', category: '자신과의 관계' },
+                { id: 'self_12', question: '살면서 가장 뿌듯했던 순간은 언제인가요?', category: '자신과의 관계' }
+            ],
+            others: [
+                { id: 'others_1', question: '친구 덕분에 힘이 났던 경험이 있나요?', category: '타인과의 관계' },
+                { id: 'others_2', question: '모둠 활동 중 모둠원 간 의견이 안 맞을 때, 내가 할 수 있는 일은?', category: '타인과의 관계' },
+                { id: 'others_3', question: '나는 탕수육을 소스에 찍어먹고 싶은데, 친구들이 나에게 묻지 않고 소스를 부어버렸다면?', category: '타인과의 관계' },
+                { id: 'others_4', question: '내 곁에 친구가 있었으면 하는 순간은?', category: '타인과의 관계' },
+                { id: 'others_5', question: '다른 사람을 기분 좋게 만드는 나만의 방법은 무엇이 있나요?', category: '타인과의 관계' },
+                { id: 'others_6', question: '친구 관계로 힘들어하는 친구에게 가장 해주고 싶은 말은 무엇인가요?', category: '타인과의 관계' },
+                { id: 'others_7', question: '멀어졌던 친구와 가까워지기 위해 내가 건네고 싶은 첫 마디는?', category: '타인과의 관계' },
+                { id: 'others_8', question: '내가 생각하는 좋은 친구란 무엇인가요?', category: '타인과의 관계' },
+                { id: 'others_9', question: '내가 추천하는 효과적인 화해 방법은 무엇인가요?', category: '타인과의 관계' },
+                { id: 'others_10', question: '갈등을 해결할 때 가장 중요한 태도는 무엇이라고 생각하나요?', category: '타인과의 관계' },
+                { id: 'others_11', question: '연필을 돌려 지목된 친구의 장점 3가지는?', category: '타인과의 관계' },
+                { id: 'others_12', question: '내가 닮고 싶은 주변 사람의 행동이나 성격은?', category: '타인과의 관계' }
+            ],
+            community: [
+                { id: 'community_1', question: '우리 반 친구들과 함께 해보고 싶은 일은 무엇인가요?', category: '공동체와의 관계' },
+                { id: 'community_2', question: '다른 친구에게 알려주고 싶은 우리 반(학교)의 자랑은?', category: '공동체와의 관계' },
+                { id: 'community_3', question: '내가 우리 반이어서 행복했던 순간은?', category: '공동체와의 관계' },
+                { id: 'community_4', question: '우리 학교에서 겪은 사소하지만 특별한 경험은?', category: '공동체와의 관계' },
+                { id: 'community_5', question: '우리 반의 기념일을 정해본다면 어떤 날로 하는 것이 좋을까요? 무슨 의미가 있나요?', category: '공동체와의 관계' },
+                { id: 'community_6', question: '우리 반이 좀 더 나아졌으면 하는 부분은 무엇인가요? 어떻게 바뀌었으면 하나요?', category: '공동체와의 관계' },
+                { id: 'community_7', question: '다른 지역 학생들과 화상 수업을 하게 된다면, 어떤 이야기를 나누고 싶나요?', category: '공동체와의 관계' },
+                { id: 'community_8', question: '내가 우리 반 선생님이 된다면, 친구들에게 어떤 말(행동)을 해주고 싶나요?', category: '공동체와의 관계' },
+                { id: 'community_9', question: '내가 학생회장이 된다면, 학교를 위해 어떤 공약을 만들고 싶나요?', category: '공동체와의 관계' },
+                { id: 'community_10', question: '평화로운 교실의 조건은 무엇이라고 생각하나요?', category: '공동체와의 관계' },
+                { id: 'community_11', question: '내가 가진 장점을 활용하여 우리 학교 친구들에게 어떤 도움을 주고 싶나요?', category: '공동체와의 관계' },
+                { id: 'community_12', question: '우리 반의 숨은 영웅은 누구일까요?', category: '공동체와의 관계' }
+            ],
+            closing: [
+                { id: 'closing_1', question: '활동 소감을 5글자로 표현한다면?', category: '서클 닫는 질문' },
+                { id: 'closing_2', question: '이야기를 나누며 알게 된 친구의 새로운 모습은?', category: '서클 닫는 질문' },
+                { id: 'closing_3', question: '다음에 함께 나누고 싶은 질문은?', category: '서클 닫는 질문' },
+                { id: 'closing_4', question: '활동을 마치며 함께 듣고 싶은 노래는?', category: '서클 닫는 질문' },
+                { id: 'closing_5', question: '서클을 함께 한 친구들과 선생님께 건네고 싶은 말은?', category: '서클 닫는 질문' },
+                { id: 'closing_6', question: '서클 이야기 속에서 새롭게 발견한 것이 있다면?', category: '서클 닫는 질문' },
+                { id: 'closing_7', question: '서클 이야기 속에서 가장 감사했던 말은?', category: '서클 닫는 질문' }
+            ],
+            play: [
+                { id: 'play_1', question: '과일 바구니', category: '공동체 놀이', playDesc: `🍎 과일 바구니\n\n모두 의자를 원 모양으로 놓고 앉아요. (의자 수는 사람 수보다 1개 적게)\n선생님이 앉지 못한 한 명을 정해 가운데에 서게 해요.\n앉은 친구들은 각각 과일 이름을 정해요. (예: 사과, 바나나, 딸기)\n가운데 있는 친구가 과일 이름을 크게 말해요.\n예) "사과!"\n"사과"인 친구들은 서로 자리를 바꿔 앉아야 해요.\n가운데 있는 친구도 빈 자리에 앉으려고 달려가요.\n자리를 못 찾은 친구가 다시 가운데에 서서 다음 과일을 외쳐요.\n👉 "과일바구니!"라고 하면 모두 자리 바꾸기!` },
+                { id: 'play_2', question: '바람이 분다', category: '공동체 놀이', playDesc: `🍃 바람이 분다\n\n모두 원형으로 의자에 앉아요. (의자는 한 개 부족하게)\n가운데에 한 친구가 서서 "바람이 분다~, 바람이 분다"라고 말해요.\n이어서 조건을 말해요.\n예) "바람이 분다~ 안경 낀 사람에게 바람이 분다!"\n해당하는 친구들은 서로 자리를 바꿔야 해요.\n가운데 친구도 재빨리 앉으려고 해요.\n자리를 못 찾은 친구가 가운데로 가서 다시 "바람이 분다~"를 외쳐요.` },
+                { id: 'play_3', question: '새 둥지 바람', category: '공동체 놀이', playDesc: `🕊️ 새 둥지 바람\n\n1️⃣ 3명이 한 팀이 되어 서요.\n양쪽 두 명은 둥지(팔로 원 만들기)\n가운데 친구는 새\n모두 팀을 이루어 둥지를 만듭니다.\n새는 둥지 안에 서 있어요.\n한 명이 술래가 되어 원 가운데에 서요.\n술래가 크게 외칩니다: "새 둥지 바람! 새 둥지 바람!" 그리고 이어서 셋 중 하나를 말해요:\n✅ "새!"를 외치면 모든 새 역할 친구들이 둥지를 떠나 다른 빈 둥지를 찾아 들어갑니다.\n✅ "둥지!"를 외치면 새는 그대로 있고, 둥지 역할 두 명이 흩어져 새가 있는 다른 팀에 가서 새로운 둥지를 만듭니다.\n✅ "바람!"을 외치면 모두가 흩어져 새로운 팀을 만들어야 합니다.\n술래도 같이 움직여 빈 자리에 들어가 새나 둥지 역할을 맡습니다.\n자리를 못 찾은 친구가 새 술래가 되어 다시 "새 둥지 바람!"을 외칩니다.` },
+                { id: 'play_4', question: '사랑합니다 왜요', category: '공동체 놀이', playDesc: `💖 사랑합니다 왜요\n\n의자만 원형으로 놓아요. (책상은 빼고, 의자만 둥글게 배열)\n술래를 한 명 정해요. 술래의 의자는 빼서 자리를 하나 비워둡니다.\n술래가 가운데 서서 크게 말해요: "사랑합니다!"\n모두 함께 외쳐요: "왜요?"\n술래가 이유를 말해요: "파란색을 좋아하니까!"\n그 이유에 해당하는 친구들은 자리를 바꿔 앉아요. 술래도 얼른 빈 자리에 가서 앉습니다.\n자리를 못 찾은 친구가 새로운 술래가 되어 다시 시작합니다.\n힌트: 이유는 눈에 보이는 것이나 경험 모두 가능해요. (예: "청바지를 입었으니까!" "놀이공원에 가봤으니까!")` },
+                { id: 'play_5', question: '손님 모셔오기', category: '공동체 놀이', playDesc: `🙋‍ 손님 모셔오기\n\n모두 원형으로 앉아요. 자리 하나는 빈 자리로 남겨둡니다.\n빈 자리 양쪽에 앉아 있는 두 친구가 서로 손을 잡아요.\n손잡은 두 친구가 함께 일어나 아무 친구에게 가서 한 명을 데려와 빈자리에 앉힙니다.\n새로 생긴 빈자리의 양옆 친구가 다시 손을 잡고 다른 친구 한 명을 데려와 앉힙니다.\n이렇게 계속 반복합니다.\n노래 한 곡을 틀어두고, 노래가 끝나는 시점에 빈자리 양옆에 앉은 친구들이 벌칙을 받습니다.` }
+            ]
+        };
+
+        // 선택된 카드 배열
+        let selectedCards = [];
+        let currentCategory = 'opening';
+        let currentSlideIndex = 0;
+
+        // 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            loadEmptyCards();
+            showCards('opening');
+            setupEventListeners();
+            updateSelectedCount();
+        });
+
+        // 이벤트 리스너 설정
+        function setupEventListeners() {
+            // 네비게이션 탭 클릭
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const category = this.dataset.category;
+                    switchCategory(category);
+                });
+            });
+
+            // 키보드 이벤트 (슬라이드쇼)
+            document.addEventListener('keydown', function(e) {
+                if (document.getElementById('slideshow').classList.contains('active')) {
+                    if (e.key === 'ArrowLeft') {
+                        previousSlide();
+                    } else if (e.key === 'ArrowRight') {
+                        nextSlide();
+                    } else if (e.key === 'Escape') {
+                        closeSlideshow();
+                    }
+                }
+            });
+
+            // 추가: 서클 규칙 카드 클릭 이벤트
+            const circleRulesCard = document.getElementById('circleRulesCard');
+            if (circleRulesCard) {
+                circleRulesCard.addEventListener('click', function() {
+                    addToSelected({
+                        id: 'circle_rules',
+                        question: '서클 규칙',
+                        playDesc: `서클 규칙\n① 토킹 스틱을 가진 사람만 이야기하고, 다른 사람의 말을 경청합니다.\n② 서클에서 패스를 정할 수 있으나 모든 질문을 패스할 수는 없습니다.\n③ 서클은 처음부터 끝까지 유지되어야 합니다.\n④ 서클에서 나온 이야기는 비밀이 보장되어야 합니다.`,
+                        category: '서클 규칙'
+                    });
+                });
+            }
+            // 추가: 이건 꼭 기억해요 카드 클릭 이벤트
+            const circleRememberCard = document.getElementById('circleRememberCard');
+            if (circleRememberCard) {
+                circleRememberCard.addEventListener('click', function() {
+                    addToSelected({
+                        id: 'circle_remember',
+                        question: '이건 꼭 기억해요',
+                        playDesc: `이건 꼭 기억해요\n\n🔵 원의 의미: 우리가 동등하게 하나가 되는 것\n🗣️ 서클: 동그랗게 앉아서 이야기를 나누고 소통하는 모임\n🖐️ 토킹 스틱: 발언의 기회`,
+                        category: '서클 규칙'
+                    });
+                });
+            }
+        }
+
+        // 카테고리 변경
+        function switchCategory(category) {
+            // 탭 활성화
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelector(`[data-category="${category}"]`).classList.add('active');
+
+            // 내용 표시
+            if (category === 'empty') {
+                showEmptyCardForm();
+            } else if (category === 'usage') {
+                showUsageGuide();
+            } else {
+                showCards(category);
+            }
+        }
+
+        // 카드 표시
+        function showCards(category) {
+            currentCategory = category;
+            const grid = document.getElementById('cardsGrid');
+            grid.innerHTML = '';
+
+            const cards = questionCards[category] || [];
+            cards.forEach(card => {
+                const cardElement = createCardElement(card);
+                grid.appendChild(cardElement);
+            });
+        }
+
+        // 카드 요소 생성
+        function createCardElement(card) {
+            const cardDiv = document.createElement('div');
+            cardDiv.className = 'card';
+            cardDiv.dataset.id = card.id;
+            cardDiv.dataset.category = card.category; // 카테고리 데이터 추가
+            cardDiv.innerHTML = `
+                <div class="card-label">${card.category}</div>
+                <div class="card-content">${card.category === '공동체 놀이' ? card.question : card.question}</div>
+            `;
+            
+            cardDiv.addEventListener('click', () => addToSelected(card));
+            return cardDiv;
+        }
+
+        // 슬라이드쇼 카드 요소 생성
+        function createSlideshowCardElement(card) {
+            const cardDiv = document.createElement('div');
+            cardDiv.className = 'slideshow-card';
+            cardDiv.dataset.id = card.id;
+            cardDiv.dataset.category = card.category; // 카테고리 데이터 추가
+            cardDiv.innerHTML = `
+                <div class="card-label">${card.category}</div>
+                <div class="card-content">${(card.category === '공동체 놀이' || card.category === '서클 규칙') && card.playDesc ? card.playDesc.replace(/\n/g, '<br>') : card.question.replace(/\n/g, '<br>')}</div>
+            `;
+            return cardDiv;
+        }
+
+        // 선택된 카드에 추가
+        function addToSelected(card) {
+            // 중복 확인
+            if (selectedCards.find(c => c.id === card.id)) {
+                return;
+            }
+
+            selectedCards.push(card);
+            updateSelectedCardsDisplay();
+            updateSelectedCount();
+            saveEmptyCards();
+        }
+
+        // 전역으로 노출 (AI 모듈에서 사용)
+        window.addToSelected = addToSelected;
+
+        // 선택된 카드 표시 업데이트
+        function updateSelectedCardsDisplay() {
+            const container = document.getElementById('selectedCardsContainer');
+            
+            if (selectedCards.length === 0) {
+                container.innerHTML = '<div class="empty-message">질문카드를 선택해주세요</div>';
+                return;
+            }
+
+            container.innerHTML = '';
+            selectedCards.forEach((card, index) => {
+                const cardElement = createSelectedCardElement(card, index);
+                container.appendChild(cardElement);
+            });
+
+            // 드래그앤드롭 설정
+            new Sortable(container, {
+                animation: 150,
+                onEnd: function(evt) {
+                    const oldIndex = evt.oldIndex;
+                    const newIndex = evt.newIndex;
+                    
+                    // 배열 순서 변경
+                    const movedCard = selectedCards.splice(oldIndex, 1)[0];
+                    selectedCards.splice(newIndex, 0, movedCard);
+                    
+                    updateSelectedCardsDisplay();
+                    saveEmptyCards();
+                }
+            });
+        }
+
+        // 선택된 카드 요소 생성
+        function createSelectedCardElement(card, index) {
+            const cardDiv = document.createElement('div');
+            cardDiv.className = 'selected-card';
+            cardDiv.dataset.index = index;
+            cardDiv.dataset.category = card.category; // 카테고리 데이터 추가
+            cardDiv.innerHTML = `
+                <button class="close-btn" onclick="removeSelectedCard(${index})">×</button>
+                <div class="selected-card-content">${card.question}</div>
+            `;
+            
+            cardDiv.addEventListener('click', (e) => {
+                if (!e.target.classList.contains('close-btn')) {
+                    openSlideshow(index);
+                }
+            });
+            
+            return cardDiv;
+        }
+
+        // 선택된 카드 제거
+        function removeSelectedCard(index) {
+            selectedCards.splice(index, 1);
+            updateSelectedCardsDisplay();
+            updateSelectedCount();
+            saveEmptyCards();
+        }
+
+        // 선택된 카드 개수 업데이트
+        function updateSelectedCount() {
+            const countElement = document.getElementById('selectedCount');
+            countElement.textContent = `(${selectedCards.length}개)`;
+        }
+
+        // 빈카드 폼 표시
+        function showEmptyCardForm() {
+            document.getElementById('cardsGrid').style.display = 'none';
+            document.getElementById('emptyCardForm').style.display = 'block';
+            document.getElementById('usageGuide').style.display = 'none';
+        }
+
+        // 사용 방법 표시
+        function showUsageGuide() {
+            document.getElementById('cardsGrid').style.display = 'none';
+            document.getElementById('emptyCardForm').style.display = 'none';
+            document.getElementById('usageGuide').style.display = 'block';
+        }
+
+        // 카드 표시 (다른 카테고리로 돌아갈 때)
+        function showCards(category) {
+            document.getElementById('cardsGrid').style.display = 'grid';
+            document.getElementById('emptyCardForm').style.display = 'none';
+            document.getElementById('usageGuide').style.display = 'none';
+            
+            currentCategory = category;
+            const grid = document.getElementById('cardsGrid');
+            grid.innerHTML = '';
+
+            const cards = questionCards[category] || [];
+            cards.forEach(card => {
+                const cardElement = createCardElement(card);
+                grid.appendChild(cardElement);
+            });
+        }
+
+        // 빈카드 추가
+        function addEmptyCard() {
+            const question = document.getElementById('newQuestion').value.trim();
+            
+            if (!question) {
+                alert('질문을 입력해주세요.');
+                return;
+            }
+
+            const newCard = {
+                id: `empty_${Date.now()}`,
+                question: question,
+                category: '사용자 질문'
+            };
+
+            selectedCards.push(newCard);
+            updateSelectedCardsDisplay();
+            updateSelectedCount();
+            saveEmptyCards();
+            
+            // 폼 초기화
+            document.getElementById('newQuestion').value = '';
+            
+            // 선택된 카드 탭으로 이동
+            switchCategory('opening');
+        }
+
+        // 카테고리 이름 가져오기
+        function getCategoryName(category) {
+            const names = {
+                'self': '자신과의 관계',
+                'others': '타인과의 관계',
+                'community': '공동체와의 관계'
+            };
+            return names[category] || category;
+        }
+
+        // 슬라이드쇼 열기
+        function openSlideshow(index) {
+            if (selectedCards.length === 0) return;
+            
+            currentSlideIndex = index;
+            const slideshow = document.getElementById('slideshow');
+            slideshow.classList.add('active');
+            
+            showSlide();
+        }
+
+        // 슬라이드쇼 닫기
+        function closeSlideshow() {
+            const slideshow = document.getElementById('slideshow');
+            slideshow.classList.remove('active');
+        }
+
+        // 슬라이드 표시
+        function showSlide() {
+            if (selectedCards.length === 0) return;
+            
+            const card = selectedCards[currentSlideIndex];
+            // 기존 텍스트만 바꾸는 방식에서 카드 전체를 크게 띄우는 방식으로 변경
+            const slideshowContent = document.querySelector('.slideshow-content');
+            // 기존 카드 제거
+            const oldCard = document.querySelector('.slideshow-card');
+            if (oldCard) oldCard.remove();
+            // 새 카드 추가
+            const cardElement = createSlideshowCardElement(card);
+            slideshowContent.insertBefore(cardElement, slideshowContent.querySelector('.slideshow-nav'));
+            // 슬라이드 카운터
+            document.getElementById('slideCounter').textContent = `${currentSlideIndex + 1} / ${selectedCards.length}`;
+            // 버튼 상태 업데이트
+            document.getElementById('prevBtn').disabled = currentSlideIndex === 0;
+            document.getElementById('nextBtn').disabled = currentSlideIndex === selectedCards.length - 1;
+        }
+
+        // 이전 슬라이드
+        function previousSlide() {
+            if (currentSlideIndex > 0) {
+                currentSlideIndex--;
+                showSlide();
+            }
+        }
+
+        // 다음 슬라이드
+        function nextSlide() {
+            if (currentSlideIndex < selectedCards.length - 1) {
+                currentSlideIndex++;
+                showSlide();
+            }
+        }
+
+        // LocalStorage 저장
+        function saveEmptyCards() {
+            localStorage.setItem('malangmalang_selectedCards', JSON.stringify(selectedCards));
+        }
+
+        // LocalStorage 로드
+        function loadEmptyCards() {
+            const saved = localStorage.getItem('malangmalang_selectedCards');
+            if (saved) {
+                selectedCards = JSON.parse(saved);
+                updateSelectedCardsDisplay();
+                updateSelectedCount();
+            }
+        }
+
+        // AI 질문 생성
+        async function generateQuestionsWithGemini(userTopic) {
+            const response = await fetch('/api/gemini', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ topic: userTopic })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'API 호출 실패');
+            }
+            
+            const data = await response.json();
+            return data;
+        }
+
+        // AI 질문 생성 처리
+        async function handleAIGenerate(topic) {
+            const loading = document.getElementById('aiLoading');
+            const resultDiv = document.getElementById('aiResultCards');
+            
+            loading.style.display = 'block';
+            resultDiv.innerHTML = '';
+            
+            try {
+                const data = await generateQuestionsWithGemini(topic);
+                const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                
+                if (!text) {
+                    throw new Error('AI 질문 세트 생성 실패');
+                }
+                
+                renderAICardsFromText(text, resultDiv);
+            } catch (e) {
+                resultDiv.innerHTML = `<div style="color:red;padding:16px;background:#ffe6e6;border-radius:8px;">AI 질문 생성 실패: ${e.message}</div>`;
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        // AI 질문 텍스트를 카드로 렌더링
+        function renderAICardsFromText(text, container) {
+            const sections = text.split(/\n(?=\[.*?질문\])/g);
+            container.innerHTML = '';
+            
+            sections.forEach(section => {
+                const match = section.match(/^\[(.*?)질문\]/);
+                const type = match ? match[1].trim() : '';
+                const icon = type.includes('여는') ? '🟣' : type.includes('주제') ? '🟢' : type.includes('닫는') ? '🔵' : '🟡';
+                const title = match ? match[0] : '';
+                const questions = section.replace(/^\[.*?\]\s*/, '').split(/\n\d+\. /).filter(q => q.trim()).map((q, i) => `${i+1}. ${q.trim()}`);
+                
+                if (questions.length === 0) return;
+                
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'ai-question-group';
+                groupDiv.innerHTML = `<div class="ai-question-type">${icon} ${title}</div>`;
+                
+                questions.forEach(q => {
+                    const card = document.createElement('div');
+                    card.className = 'ai-question-card';
+                    card.innerHTML = `
+                        <div class="ai-question-text">${q}</div>
+                        <button class="btn btn-secondary ai-add-btn">카드에 추가</button>
+                        <button class="btn btn-secondary ai-copy-btn">복사</button>
+                    `;
+                    
+                    // 카드에 추가
+                    card.querySelector('.ai-add-btn').onclick = () => {
+                        addToSelected({
+                            id: `ai_${Date.now()}_${Math.random()}`,
+                            question: q.replace(/^\d+\.\s*/, ''),
+                            category: type + ' (AI)'
+                        });
+                    };
+                    
+                    // 복사
+                    card.querySelector('.ai-copy-btn').onclick = () => {
+                        navigator.clipboard.writeText(q.replace(/^\d+\.\s*/, ''));
+                        alert('질문이 복사되었습니다!');
+                    };
+                    
+                    groupDiv.appendChild(card);
+                });
+                
+                container.appendChild(groupDiv);
+            });
+        }
+
+        // AI 이벤트 리스너 설정
+        function setupAIEventListeners() {
+            const select = document.getElementById('aiSituation');
+            const customInput = document.getElementById('aiCustomInput');
+            const generateBtn = document.getElementById('aiGenerateBtn');
+            
+            if (!select || !customInput || !generateBtn) return;
+            
+            // 드롭다운 변경 이벤트
+            select.addEventListener('change', () => {
+                if (select.value === '직접 입력') {
+                    customInput.style.display = 'block';
+                    customInput.focus();
+                } else {
+                    customInput.style.display = 'none';
+                    customInput.value = '';
+                }
+            });
+            
+            // 생성 버튼 클릭 이벤트
+            generateBtn.addEventListener('click', async () => {
+                let topic = select.value;
+                if (topic === '직접 입력') {
+                    topic = customInput.value.trim();
+                    if (!topic || topic.length < 2) {
+                        alert('주제를 2글자 이상 입력해 주세요.');
+                        customInput.focus();
+                        return;
+                    }
+                }
+                await handleAIGenerate(topic);
+            });
+        }
+
+        // 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            loadEmptyCards();
+            showCards('opening');
+            setupEventListeners();
+            updateSelectedCount();
+            setupAIEventListeners(); // AI 이벤트 리스너 추가
+        });
+    </script>
+</body>
+</html> 

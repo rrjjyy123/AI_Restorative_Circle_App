@@ -1,0 +1,80 @@
+/* css/ai-components.css */
+
+.ai-question-group {
+  margin: 24px 0 32px 0;
+  padding: 18px 16px 12px 16px;
+  background: #f8f9ff;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(102,126,234,0.08);
+}
+
+.ai-question-type {
+  font-weight: bold;
+  font-size: 1.15rem;
+  color: #764ba2;
+  margin-bottom: 10px;
+}
+
+.ai-question-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  border: 2px solid #e9ecef;
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-bottom: 10px;
+  box-shadow: 0 1px 4px rgba(102,126,234,0.04);
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.ai-question-card:hover {
+  border-color: #667eea;
+  box-shadow: 0 4px 16px rgba(102,126,234,0.10);
+}
+
+.ai-question-text {
+  flex: 1;
+  font-size: 1.08rem;
+  color: #333;
+  margin-right: 16px;
+}
+
+.btn.ai-add-btn, .btn.ai-copy-btn {
+  margin-left: 6px;
+  background: #f7a531;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 14px;
+  font-size: 0.98rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn.ai-add-btn:hover, .btn.ai-copy-btn:hover {
+  background: #e15b5b;
+}
+
+#aiLoading {
+  color: #764ba2;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+#aiResultCards .ai-question-group:last-child {
+  margin-bottom: 0;
+}
+
+#aiResultCards .ai-question-card:last-child {
+  margin-bottom: 0;
+}
+
+#aiResultCards .ai-question-type {
+  margin-top: 0;
+}
+
+#aiResultCards {
+  margin-top: 18px;
+} 
