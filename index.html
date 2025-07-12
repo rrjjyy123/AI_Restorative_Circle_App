@@ -1132,18 +1132,18 @@
                         const addButton = document.createElement('button');
                         addButton.textContent = '카드에 추가';
                         addButton.style.cssText = 'background: #667eea; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer;';
-                        addButton.onclick = () => {
+                        addButton.addEventListener('click', () => {
                             addToSelected({
                                 id: `ai_${Date.now()}_${Math.random()}`,
                                 question: q.question,
                                 category: q.category || 'AI 생성 질문' // AI가 반환한 카테고리 사용 또는 기본값
                             });
-                        };
+                        });
                         
                         const copyButton = document.createElement('button');
                         copyButton.textContent = '복사';
                         copyButton.style.cssText = 'background: #764ba2; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer;';
-                        copyButton.onclick = () => copyToClipboard(q.question);
+                        copyButton.addEventListener('click', () => copyToClipboard(q.question));
 
                         buttonGroup.appendChild(addButton);
                         buttonGroup.appendChild(copyButton);
