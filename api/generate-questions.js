@@ -30,13 +30,40 @@ module.exports = async (req, res) => {
         // 마크다운 코드 블록 제거
         const cleanedText = text.replace(/```json\n|```/g, '').trim();
 
-        // JSON 파싱 시도
+        let jsonString = '';
+        let braceCount = 0;
+        let startIndex = -1;
+
+        // 첫 번째 완전한 JSON 객체 추출
+        for (let i = 0; i < cleanedText.length; i++) {
+            const char = cleanedText[i];
+            if (char === '{') {
+                if (startIndex === -1) {
+                    startIndex = i;
+                }
+                braceCount++;
+            } else if (char === '}') {
+                braceCount--;
+            }
+
+            if (startIndex !== -1 && braceCount === 0) {
+                jsonString = cleanedText.substring(startIndex, i + 1);
+                break; // 첫 번째 완전한 JSON 객체를 찾으면 중단
+            }
+        }
+
+        if (!jsonString) {
+            console.error('Could not extract a complete JSON object from AI response:', cleanedText);
+            return res.status(500).json({ message: 'AI model returned malformed JSON or no JSON object.', rawResponse: text });
+        }
+
+        // 추출된 JSON 문자열 파싱 시도
         let parsedResponse;
         try {
-            parsedResponse = JSON.parse(cleanedText);
+            parsedResponse = JSON.parse(jsonString);
         } catch (parseError) {
-            console.error('Failed to parse AI response as JSON:', text, parseError);
-            return res.status(500).json({ message: 'AI model returned malformed JSON.', rawResponse: text });
+            console.error('Failed to parse extracted JSON string:', jsonString, parseError);
+            return res.status(500).json({ message: 'Extracted JSON string is malformed.', rawResponse: text });
         }
 
         // 각 질문에 category 필드 추가
