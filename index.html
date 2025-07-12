@@ -1103,7 +1103,11 @@
         // AI 생성 질문 표시
         function displayAiQuestions(questions) {
             const resultDiv = document.getElementById('aiResult');
-            resultDiv.innerHTML = '<h4>✨ AI가 생성한 질문 세트</h4>';
+            resultDiv.innerHTML = ''; // 기존 내용 초기화
+
+            const titleH4 = document.createElement('h4');
+            titleH4.textContent = '✨ AI가 생성한 질문 세트';
+            resultDiv.appendChild(titleH4);
 
             // 질문 유형별로 섹션 생성
             const questionTypes = [
@@ -1114,7 +1118,11 @@
 
             questionTypes.forEach(type => {
                 if (questions[type.key] && questions[type.key].length > 0) {
-                    resultDiv.innerHTML += `<h5 style="margin-top: 20px; margin-bottom: 10px; color: #555;">${type.title}</h5>`;
+                    const typeH5 = document.createElement('h5');
+                    typeH5.style.cssText = 'margin-top: 20px; margin-bottom: 10px; color: #555;';
+                    typeH5.textContent = type.title;
+                    resultDiv.appendChild(typeH5);
+
                     questions[type.key].forEach(q => {
                         const card = document.createElement('div');
                         card.style.cssText = 'background: #fff; border-radius: 10px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;';
