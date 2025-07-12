@@ -1155,13 +1155,14 @@
             });
 
             // 백엔드 필요성 안내 메시지 추가
-            resultDiv.innerHTML += `
-                <div style="margin-top: 40px; padding: 20px; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 8px; color: #856404; font-size: 0.9rem;">
-                    <strong>💡 중요:</strong> 이 AI 질문 생성 기능은 현재 백엔드 엔드포인트(<code>/api/generate-questions</code>)를 호출하도록 설정되어 있습니다.<br>
-                    실제 Gemini AI 기능을 사용하려면, <a href="https://vercel.com/docs/functions/serverless-functions" target="_blank" style="color: #856404; text-decoration: underline;">Vercel 서버리스 함수</a> 등을 사용하여 Gemini API를 호출하는 백엔드를 직접 구현하고 배포해야 합니다.<br>
-                    API 키는 절대 클라이언트 코드에 노출하지 마세요. 백엔드에서 환경 변수로 안전하게 관리해야 합니다.
-                </div>
+            const backendInfoDiv = document.createElement('div');
+            backendInfoDiv.style.cssText = 'margin-top: 40px; padding: 20px; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 8px; color: #856404; font-size: 0.9rem;';
+            backendInfoDiv.innerHTML = `
+                <strong>💡 중요:</strong> 이 AI 질문 생성 기능은 현재 백엔드 엔드포인트(<code>/api/generate-questions</code>)를 호출하도록 설정되어 있습니다.<br>
+                실제 Gemini AI 기능을 사용하려면, <a href="https://vercel.com/docs/functions/serverless-functions" target="_blank" style="color: #856404; text-decoration: underline;">Vercel 서버리스 함수</a> 등을 사용하여 Gemini API를 호출하는 백엔드를 직접 구현하고 배포해야 합니다.<br>
+                API 키는 절대 클라이언트 코드에 노출하지 마세요. 백엔드에서 환경 변수로 안전하게 관리해야 합니다.
             `;
+            resultDiv.appendChild(backendInfoDiv);
         }
 
         // 클립보드에 복사
