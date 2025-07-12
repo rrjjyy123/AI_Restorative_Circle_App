@@ -1166,8 +1166,10 @@
 
         // 클립보드에 복사
         function copyToClipboard(text) {
+            console.log('copyToClipboard called with:', text);
             navigator.clipboard.writeText(text).then(() => {
                 alert('질문이 복사되었습니다.');
+                console.log('Text copied successfully!');
             }).catch(err => {
                 console.error('복사 실패:', err);
             });
@@ -1216,8 +1218,10 @@
 
         // 선택된 카드에 추가
         function addToSelected(card) {
+            console.log('addToSelected called with:', card);
             // 중복 확인
             if (selectedCards.find(c => c.id === card.id)) {
+                console.log('Card already selected:', card.id);
                 return;
             }
 
