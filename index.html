@@ -182,6 +182,24 @@
             gap: 10px;
         }
 
+        .clear-all-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-left: auto;
+        }
+
+        .clear-all-btn:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+
         .selected-cards-container {
             display: flex;
             gap: 15px;
@@ -655,12 +673,12 @@
         <!-- 네비게이션 -->
         <div class="nav">
             <div class="nav-tabs">
-                <div class="nav-tab active" data-category="opening">서클 여는 질문</div>
+                <div class="nav-tab active" data-category="ai">AI 질문 생성</div>
+                <div class="nav-tab" data-category="opening">서클 여는 질문</div>
                 <div class="nav-tab" data-category="self">자신과의 관계</div>
                 <div class="nav-tab" data-category="others">타인과의 관계</div>
                 <div class="nav-tab" data-category="community">공동체와의 관계</div>
                 <div class="nav-tab" data-category="closing">서클 닫는 질문</div>
-                <div class="nav-tab" data-category="ai">AI 질문 생성</div>
                 <div class="nav-tab" data-category="play">공동체 놀이</div>
                 <div class="nav-tab" data-category="usage">사용 방법</div>
             </div>
@@ -723,7 +741,7 @@
                 </li>
                 <li>
                     <div class="step">5</div>
-                    <div>빈카드 작성으로 새로운 질문을 추가할 수 있습니다.</div>
+                    <div>AI 질문 생성과 빈카드 작성으로 새로운 질문을 추가할 수 있습니다.</div>
                 </li>
             </ul>
 
@@ -844,6 +862,7 @@
             <div class="selected-cards-title">
                 📋 선택된 질문카드
                 <span id="selectedCount">(0개)</span>
+                <button id="clearAllBtn" class="clear-all-btn" onclick="clearAllSelectedCards()" style="display: none;">전체 삭제</button>
             </div>
             <div id="selectedCardsContainer" class="selected-cards-container">
                 <div class="empty-message">질문카드를 선택해주세요</div>
@@ -945,7 +964,7 @@
         // 초기화
         document.addEventListener('DOMContentLoaded', function() {
             loadEmptyCards();
-            showCards('opening');
+            switchCategory('ai'); // AI 질문 생성으로 초기 화면 설정
             setupEventListeners();
             updateSelectedCount();
         });
@@ -1306,6 +1325,26 @@
         function updateSelectedCount() {
             const countElement = document.getElementById('selectedCount');
             countElement.textContent = `(${selectedCards.length}개)`;
+            
+            // 전체 삭제 버튼 표시/숨김
+            const clearAllBtn = document.getElementById('clearAllBtn');
+            if (selectedCards.length > 0) {
+                clearAllBtn.style.display = 'block';
+            } else {
+                clearAllBtn.style.display = 'none';
+            }
+        }
+
+        // 전체 선택된 카드 삭제
+        function clearAllSelectedCards() {
+            if (selectedCards.length === 0) return;
+            
+            if (confirm('선택된 모든 질문카드를 삭제하시겠습니까?')) {
+                selectedCards = [];
+                updateSelectedCardsDisplay();
+                updateSelectedCount();
+                saveEmptyCards();
+            }
         }
 
         // 빈카드 폼 표시
