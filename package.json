@@ -1,7 +1,7 @@
 {
   "name": "malangmalang-question-cards",
   "version": "1.0.0",
-  "description": "관계중심 생활교육 질문카드 with AI",
+  "description": "회복적 생활교육 질문카드 with AI",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
