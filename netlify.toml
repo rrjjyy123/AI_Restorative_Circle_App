@@ -1,0 +1,9 @@
+# Netlify 빌드 설정
+[build]
+  # Next.js, React 등 프레임워크에 따라 build, out, .next 등
+  publish = "build" 
+
+# Netlify 함수 설정
+[functions]
+  # ✨ Netlify에게 함수 폴더가 'api' 라고 알려주는 부분
+  directory = "api"
