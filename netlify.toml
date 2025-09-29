@@ -1,9 +1,20 @@
-# Netlify 빌드 설정
+# Netlify 빌드 및 배포 설정
 [build]
-  # Next.js, React 등 프레임워크에 따라 build, out, .next 등
-  publish = "build" 
+  # 함수가 사용하는 @google/generative-ai 패키지를 설치하기 위해 필요합니다.
+  command = "npm install"
+  # index.html이 있는 루트 폴더를 배포합니다.
+  publish = "."
 
-# Netlify 함수 설정
+# Netlify 함수(API) 설정
 [functions]
-  # ✨ Netlify에게 함수 폴더가 'api' 라고 알려주는 부분
+  # Vercel처럼 'api' 폴더를 함수 폴더로 사용하도록 Netlify에 알려줍니다.
   directory = "api"
+
+# URL 재작성 규칙 (프론트엔드 코드 수정을 막아주는 핵심 설정)
+[[redirects]]
+  # 프론트엔드(index.html)에서 '/api/...'로 요청하는 모든 주소를
+  from = "/api/*"
+  # 실제 Netlify 함수 주소('/.netlify/functions/...')로 연결해줍니다.
+  to = "/.netlify/functions/:splat"
+  # 성공(OK) 상태로 처리하여 주소가 바뀐 것을 모르게 합니다.
+  status = 200
