@@ -1,8 +1,9 @@
 # Netlify 빌드 및 배포 설정
 [build]
-  # 함수가 사용하는 @google/generative-ai 패키지를 설치하기 위해 필요합니다.
+  # API 함수가 사용하는 @google/generative-ai 패키지를 설치하기 위한 명령어입니다.
   command = "npm install"
-  # index.html이 있는 루트 폴더를 배포합니다.
+  
+  # 배포할 폴더입니다. index.html이 루트에 있으므로 '.'으로 설정합니다.
   publish = "."
 
 # Netlify 함수(API) 설정
@@ -11,10 +12,9 @@
   directory = "api"
 
 # URL 재작성 규칙 (프론트엔드 코드 수정을 막아주는 핵심 설정)
+# index.html에서 '/api/generate-questions'로 보내는 요청을
+# 실제 Netlify 함수 주소인 '/.netlify/functions/generate-questions'로 연결해줍니다.
 [[redirects]]
-  # 프론트엔드(index.html)에서 '/api/...'로 요청하는 모든 주소를
   from = "/api/*"
-  # 실제 Netlify 함수 주소('/.netlify/functions/...')로 연결해줍니다.
   to = "/.netlify/functions/:splat"
-  # 성공(OK) 상태로 처리하여 주소가 바뀐 것을 모르게 합니다.
   status = 200
